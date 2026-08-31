@@ -9,9 +9,15 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
+    "chess-tcn": "^1.1.1",
+    "chess.js": "^1.4.0",
     "next": "16.3.3",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-chessboard": "^5.12.1",
+    "react-dom": "19.2.8",
+    "stockfish.js": "^10.0.2",
+    "tone": "^15.1.22"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
