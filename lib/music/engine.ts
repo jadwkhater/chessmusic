@@ -78,6 +78,11 @@ export async function initAudio(instrument: Instrument): Promise<void> {
   }
 }
 
+/** True once the synths exist and the AudioContext is actually running. */
+export function audioReady(): boolean {
+  return voices !== null && Tone.getContext().state === "running";
+}
+
 export function stopAll(): void {
   voices?.white.releaseAll();
   voices?.black.releaseAll();

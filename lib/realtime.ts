@@ -88,9 +88,83 @@ export function getPlayerId(): string {
 }
 
 export interface Room {
-  channel: RealtimeChannel;
+  channel: RealtimeChannel | null;
   send: (msg: RoomMsg) => void;
   leave: () => void;
+}
+
+/**
+ * Fallback transport when Supabase isn't configured: BroadcastChannel,
+ * which reaches other tabs of the same browser. Presence is emulated
+ * with join/ping/bye messages.
+ */
+function joinLocalRoom(
+  code: string,
+  playerId: string,
+  handlers: {
+    onMessage: (msg: RoomMsg) => void;
+    onPresence: (playerIds: string[]) => void;
+    onSubscribed?: () => void;
+  },
+): Room {
+  const bc = new BroadcastChannel(`chess:${code.toUpperCase()}`);
+  const peers = new Map<string, number>(); // playerId -> last seen
+  let closed = false;
+
+  const emitPresence = () => {
+    const now = Date.now();
+    for (const [id, seen] of peers) if (now - seen > 7000) peers.delete(id);
+    handlers.onPresence([playerId, ...peers.keys()]);
+  };
+
+  bc.onmessage = (e) => {
+    const { kind, from, msg } = e.data as {
+      kind: "msg" | "join" | "ping" | "bye";
+      from: string;
+      msg?: RoomMsg;
+    };
+    if (from === playerId) return;
+    if (kind === "bye") {
+      peers.delete(from);
+      emitPresence();
+      return;
+    }
+    const isNew = !peers.has(from);
+    peers.set(from, Date.now());
+    if (kind === "join") bc.postMessage({ kind: "ping", from: playerId });
+    if (isNew) emitPresence();
+    if (kind === "msg" && msg) handlers.onMessage(msg);
+  };
+
+  bc.postMessage({ kind: "join", from: playerId });
+  const heartbeat = setInterval(() => {
+    if (!closed) {
+      bc.postMessage({ kind: "ping", from: playerId });
+      emitPresence();
+    }
+  }, 3000);
+  queueMicrotask(() => {
+    handlers.onSubscribed?.();
+    emitPresence();
+  });
+
+  return {
+    channel: null,
+    send: (msg) => {
+      if (closed) return;
+      try {
+        bc.postMessage({ kind: "msg", from: playerId, msg });
+      } catch {}
+    },
+    leave: () => {
+      closed = true;
+      clearInterval(heartbeat);
+      try {
+        bc.postMessage({ kind: "bye", from: playerId });
+      } catch {}
+      bc.close();
+    },
+  };
 }
 
 export function joinRoom(
@@ -102,6 +176,9 @@ export function joinRoom(
     onSubscribed?: () => void;
   },
 ): Room {
+  if (!supabaseConfigured()) {
+    return joinLocalRoom(code, playerId, handlers);
+  }
   const channel = getClient().channel(`chess:${code.toUpperCase()}`, {
     config: {
       broadcast: { self: false },

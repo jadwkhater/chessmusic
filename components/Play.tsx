@@ -6,7 +6,7 @@ import type { PieceDropHandlerArgs } from "react-chessboard";
 import Board from "./Board";
 import type { AnnotatedMove } from "@/lib/chesscom";
 import { EB_G_JAZZ } from "@/lib/music/config";
-import { initAudio, playMove } from "@/lib/music/engine";
+import { audioReady, initAudio, playMove, stopAll } from "@/lib/music/engine";
 import {
   formatMs,
   makeClock,
@@ -44,11 +44,12 @@ export default function Play() {
   const [clock, setClock] = useState<ClockState>(() => makeClock(0));
   const [opponentHere, setOpponentHere] = useState(false);
   const [drawOffered, setDrawOffered] = useState<"byMe" | "byThem" | null>(null);
-  const [sonify, setSonify] = useState(false);
+  const [sonify, setSonify] = useState(true);
   const [status, setStatus] = useState<string | null>(null);
 
   const chessRef = useRef(new Chess());
   const roomRef = useRef<Room | null>(null);
+  const connectedCodeRef = useRef<string | null>(null);
   const playerIdRef = useRef<string>("");
   const tcRef = useRef<TimeControl>(tc);
   const myColorRef = useRef<"w" | "b" | null>(null);
@@ -68,10 +69,49 @@ export default function Play() {
 
   useEffect(() => {
     playerIdRef.current = getPlayerId();
-    return () => roomRef.current?.leave();
+    return () => {
+      roomRef.current?.leave();
+      roomRef.current = null;
+      connectedCodeRef.current = null;
+    };
   }, []);
 
-  const sonifyMove = useCallback(
+  // every move of the current game, annotated for replay/sonification
+  const recordedRef = useRef<AnnotatedMove[]>([]);
+  const [recorded, setRecorded] = useState<AnnotatedMove[]>([]);
+  const [replayPly, setReplayPly] = useState(0);
+  const [replayPlaying, setReplayPlaying] = useState(false);
+  const replayTokenRef = useRef(0);
+
+  const stopReplay = useCallback(() => {
+    replayTokenRef.current++;
+    setReplayPlaying(false);
+    stopAll();
+  }, []);
+
+  const startReplay = useCallback(async (from?: number) => {
+    const moves = recordedRef.current;
+    if (moves.length === 0) return;
+    await initAudio(EB_G_JAZZ.instrument);
+    const token = ++replayTokenRef.current;
+    setReplayPlaying(true);
+    let i = from ?? 0;
+    if (i >= moves.length) i = 0;
+    const step = () => {
+      if (token !== replayTokenRef.current) return;
+      playMove(moves[i], EB_G_JAZZ);
+      i++;
+      setReplayPly(i);
+      if (i < moves.length) {
+        setTimeout(step, 900);
+      } else {
+        setReplayPlaying(false);
+      }
+    };
+    step();
+  }, []);
+
+  const recordMove = useCallback(
     (mv: {
       color: "w" | "b";
       piece: string;
@@ -83,7 +123,6 @@ export default function Play() {
       isKingsideCastle: () => boolean;
       isQueensideCastle: () => boolean;
     }) => {
-      if (!sonifyRef.current) return;
       const annotated: AnnotatedMove = {
         ply: chessRef.current.history().length,
         color: mv.color,
@@ -99,13 +138,30 @@ export default function Play() {
         clockTenths: null,
         thinkMs: null,
       };
-      playMove(annotated, EB_G_JAZZ);
+      recordedRef.current.push(annotated);
+      setRecorded([...recordedRef.current]);
+      if (sonifyRef.current) {
+        if (audioReady()) {
+          playMove(annotated, EB_G_JAZZ);
+        } else {
+          // audio unlocks on the first user gesture; play only the latest
+          // move then so a silent backlog doesn't burst out at once
+          void initAudio(EB_G_JAZZ.instrument)
+            .then(() => {
+              if (recordedRef.current.at(-1) === annotated) {
+                playMove(annotated, EB_G_JAZZ);
+              }
+            })
+            .catch(() => {});
+        }
+      }
     },
     [],
   );
 
   const endGame = useCallback((code: string, reason: string) => {
     setClock((c) => ({ ...readClock(c), running: null, lastTickAt: Date.now() }));
+    setReplayPly(recordedRef.current.length);
     setPhase({ p: "over", code, reason });
   }, []);
 
@@ -134,11 +190,26 @@ export default function Play() {
       const me = playerIdRef.current;
       switch (msg.t) {
         case "start": {
-          const color = msg.whiteId === me ? "w" : "b";
+          // ignore duplicate starts once moves have been made
+          if (myColorRef.current !== null && chessRef.current.history().length > 0) break;
+          // a resent start may carry an "opponent" placeholder for our id
+          const color: "w" | "b" =
+            msg.whiteId === me
+              ? "w"
+              : msg.blackId === me
+                ? "b"
+                : msg.whiteId === "opponent"
+                  ? "w"
+                  : "b";
           setMyColor(color);
           myColorRef.current = color;
           tcRef.current = msg.tc;
           chessRef.current = new Chess();
+          recordedRef.current = [];
+          setRecorded([]);
+          replayTokenRef.current++;
+          setReplayPlaying(false);
+          setReplayPly(0);
           setFen(chessRef.current.fen());
           setLastMove(null);
           setDrawOffered(null);
@@ -156,7 +227,7 @@ export default function Play() {
             setFen(chessRef.current.fen());
             setLastMove({ from: msg.from, to: msg.to });
             setClock((c) => pressClock(c, mv.color, tcRef.current.incMs, msg.clockMs));
-            sonifyMove(mv);
+            recordMove(mv);
             checkGameEnd(code);
           } catch {
             roomRef.current?.send({ t: "syncReq", playerId: me });
@@ -187,6 +258,16 @@ export default function Play() {
         case "syncReq": {
           const color = myColorRef.current;
           if (!color) break;
+          if (chessRef.current.history().length === 0) {
+            // game just started (or joiner missed the start): resend it
+            roomRef.current?.send({
+              t: "start",
+              whiteId: color === "w" ? me : "opponent",
+              blackId: color === "b" ? me : "opponent",
+              tc: tcRef.current,
+            });
+            break;
+          }
           const read = readClock(clockStateRef.current);
           roomRef.current?.send({
             t: "sync",
@@ -203,7 +284,7 @@ export default function Play() {
         }
         case "sync": {
           if (msg.playerId === me) break;
-          if (msg.ply > chessRef.current.history().length) {
+          if (msg.ply > chessRef.current.history().length || myColorRef.current === null) {
             chessRef.current.load(msg.fen);
             setFen(msg.fen);
             tcRef.current = msg.tc;
@@ -224,11 +305,13 @@ export default function Play() {
         }
       }
     },
-    [checkGameEnd, endGame, sonifyMove],
+    [checkGameEnd, endGame, recordMove],
   );
 
   const connect = useCallback(
     (code: string, isHost: boolean, timeControl: TimeControl) => {
+      if (connectedCodeRef.current === code && roomRef.current) return;
+      connectedCodeRef.current = code;
       isHostRef.current = isHost;
       tcRef.current = timeControl;
       const me = playerIdRef.current;
@@ -266,7 +349,7 @@ export default function Play() {
   // auto-join via ?room=CODE
   useEffect(() => {
     const room = searchParams.get("room");
-    if (room && phase.p === "lobby" && configured) {
+    if (room && phase.p === "lobby") {
       connect(room.toUpperCase(), false, TIME_CONTROLS[1]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -317,22 +400,12 @@ export default function Play() {
         clockMs: nextClock[mv.color],
       });
 
-      if (sonifyRef.current) initAudio(EB_G_JAZZ.instrument).then(() => sonifyMove(mv));
+      recordMove(mv);
       checkGameEnd(phase.code);
       return true;
     },
-    [phase, myColor, clock, checkGameEnd, sonifyMove],
+    [phase, myColor, clock, checkGameEnd, recordMove],
   );
-
-  if (!configured) {
-    return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-6 text-sm text-[var(--text-dim)]">
-        live play needs Supabase keys: set{" "}
-        <code className="text-[var(--accent)]">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
-        <code className="text-[var(--accent)]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
-      </div>
-    );
-  }
 
   if (phase.p === "lobby") {
     return (
@@ -379,6 +452,13 @@ export default function Play() {
             </button>
           </div>
         </div>
+
+        {!configured && (
+          <p className="text-xs text-[var(--text-dim)]">
+            no realtime keys set, so rooms only reach other tabs of this
+            browser. add Supabase keys for online play.
+          </p>
+        )}
       </div>
     );
   }
@@ -420,6 +500,19 @@ export default function Play() {
 
   // playing / over
   const opponentColor = myColor === "w" ? "b" : "w";
+  const inReplay = phase.p === "over" && recorded.length > 0;
+  const boardFen =
+    inReplay && replayPly < recorded.length
+      ? replayPly === 0
+        ? new Chess().fen()
+        : recorded[replayPly - 1].fenAfter
+      : fen;
+  const boardLastMove =
+    inReplay && replayPly < recorded.length
+      ? replayPly === 0
+        ? null
+        : recorded[replayPly - 1]
+      : lastMove;
   const clockBox = (side: "w" | "b") => (
     <div
       className={`rounded-md border px-3 py-1.5 text-lg tabular-nums ${
@@ -442,8 +535,8 @@ export default function Play() {
       </div>
 
       <Board
-        fen={fen}
-        lastMove={lastMove}
+        fen={boardFen}
+        lastMove={boardLastMove}
         orientation={myColor === "b" ? "black" : "white"}
         interactive={phase.p === "playing"}
         onDrop={onDrop}
@@ -457,11 +550,41 @@ export default function Play() {
       </div>
 
       {phase.p === "over" ? (
-        <div className="space-y-2 rounded-md border border-[var(--accent)] p-3 text-center">
+        <div className="space-y-3 rounded-md border border-[var(--accent)] p-3 text-center">
           <p className="text-sm text-[var(--accent)]">{phase.reason}</p>
+          {recorded.length > 0 && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() =>
+                  replayPlaying
+                    ? stopReplay()
+                    : startReplay(replayPly >= recorded.length ? 0 : replayPly)
+                }
+                className="w-24 rounded-md border border-[var(--accent)] px-3 py-1.5 text-sm text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-white"
+              >
+                {replayPlaying ? "pause" : "♪ replay"}
+              </button>
+              <input
+                type="range"
+                min={0}
+                max={recorded.length}
+                value={replayPly}
+                onChange={(e) => {
+                  stopReplay();
+                  setReplayPly(Number(e.target.value));
+                }}
+                className="flex-1"
+              />
+              <span className="text-xs tabular-nums text-[var(--text-dim)]">
+                {replayPly}/{recorded.length}
+              </span>
+            </div>
+          )}
           <button
             onClick={() => {
+              stopReplay();
               roomRef.current?.leave();
+              connectedCodeRef.current = null;
               setMyColor(null);
               myColorRef.current = null;
               setOpponentHere(false);
