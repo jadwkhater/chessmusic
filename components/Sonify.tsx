@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Board from "./Board";
 import MappingControls from "./MappingControls";
 import EvalSparkline from "./EvalSparkline";
+import EvalBar from "./EvalBar";
+import { formatMs } from "@/lib/clock";
 import { loadGame, parseGameRef, type LoadedGame } from "@/lib/chesscom";
 import { EB_G_JAZZ, type MusicConfig } from "@/lib/music/config";
 import { initAudio, moveGapMs, playMove, stopAll } from "@/lib/music/engine";
@@ -164,6 +166,43 @@ export default function Sonify() {
   const white = String(game?.headers.White ?? "white");
   const black = String(game?.headers.Black ?? "black");
 
+  // remaining clock (tenths of seconds) for a side at the current ply
+  const clockAtPly = (color: "w" | "b"): number | null => {
+    if (!game) return null;
+    for (let i = Math.min(ply, game.moves.length) - 1; i >= 0; i--) {
+      if (game.moves[i].color === color) return game.moves[i].clockTenths;
+    }
+    return game.baseTimeTenths;
+  };
+  const sideToMove: "w" | "b" = ply % 2 === 0 ? "w" : "b";
+  const gameOngoing = game !== null && ply < game.moves.length;
+
+  const clockChip = (color: "w" | "b") => {
+    const tenths = clockAtPly(color);
+    if (tenths === null) return null;
+    const active = gameOngoing && sideToMove === color;
+    return (
+      <span
+        className={`rounded border px-2 py-0.5 font-mono text-xs tabular-nums ${
+          active
+            ? "border-[var(--accent)] text-[var(--accent)]"
+            : "border-[var(--border)] text-[var(--text-dim)]"
+        }`}
+      >
+        {formatMs(tenths * 100)}
+      </span>
+    );
+  };
+
+  const currentCp =
+    game === null || !config.eval.enabled
+      ? undefined
+      : ply === 0
+        ? evalState.status === "done"
+          ? 0
+          : undefined
+        : game.moves[ply - 1].evalCp;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -193,13 +232,22 @@ export default function Sonify() {
       {game && (
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="w-full max-w-md space-y-3">
-            <div className="flex justify-between text-xs text-[var(--text-dim)]">
-              <span>{black}</span>
-              <span>{String(game.headers.Result ?? "")}</span>
+            <div className="flex items-center justify-between gap-2 text-xs text-[var(--text-dim)]">
+              <span className="truncate">{black}</span>
+              {clockChip("b")}
             </div>
-            <Board fen={currentFen!} lastMove={lastMove} />
+            <div className="flex items-stretch gap-2">
+              {config.eval.enabled && <EvalBar cp={currentCp} />}
+              <div className="min-w-0 flex-1">
+                <Board fen={currentFen!} lastMove={lastMove} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2 text-xs text-[var(--text-dim)]">
+              <span className="truncate">{white}</span>
+              {clockChip("w")}
+            </div>
             <div className="flex justify-between text-xs text-[var(--text-dim)]">
-              <span>{white}</span>
+              <span>{String(game.headers.Result ?? "")}</span>
               <span>
                 {ply}/{game.moves.length}
                 {lastMove ? ` · ${lastMove.san}` : ""}
