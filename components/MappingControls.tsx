@@ -33,7 +33,7 @@ interface Props {
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <span className="font-mono text-[11px] text-[var(--text-dim)]">
+    <span className="text-[11px] text-[var(--text-dim)]">
       {children}
     </span>
   );
@@ -50,7 +50,7 @@ export default function MappingControls({ config, onChange, showEval = true }: P
     const s = config[side];
     return (
       <div className="flex-1 space-y-2">
-        <div className="font-mono text-xs text-[var(--accent)]">{side}</div>
+        <div className="text-xs text-[var(--accent)]">{side}</div>
         <div className="flex items-center gap-2">
           <Label>key</Label>
           <select
@@ -77,7 +77,7 @@ export default function MappingControls({ config, onChange, showEval = true }: P
         </div>
         {CHORD_PIECES.map((p) => (
           <div key={p} className="flex items-center gap-2">
-            <span className="w-14 font-mono text-[11px] text-[var(--text-dim)]">
+            <span className="w-14 text-[11px] text-[var(--text-dim)]">
               {PIECE_NAMES[p]}
             </span>
             <select
@@ -144,7 +144,7 @@ export default function MappingControls({ config, onChange, showEval = true }: P
             <option key={i}>{i}</option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 font-mono text-[11px] text-[var(--text-dim)]">
+        <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-dim)]">
           <input
             type="checkbox"
             checked={config.captureAccent}
@@ -182,23 +182,40 @@ export default function MappingControls({ config, onChange, showEval = true }: P
             />
           </label>
         ) : (
-          <label className="flex items-center gap-2">
-            <Label>speed {config.pacing.speed.toFixed(1)}×</Label>
-            <input
-              type="range"
-              min={0.5}
-              max={16}
-              step={0.5}
-              value={config.pacing.speed}
-              onChange={(e) => update((d) => (d.pacing.speed = Number(e.target.value)))}
-            />
-          </label>
+          <>
+            <label className="flex items-center gap-2">
+              <Label>speed {config.pacing.speed.toFixed(1)}×</Label>
+              <input
+                type="range"
+                min={0.5}
+                max={16}
+                step={0.5}
+                value={config.pacing.speed}
+                onChange={(e) => update((d) => (d.pacing.speed = Number(e.target.value)))}
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <Label>max pause</Label>
+              <select
+                value={config.pacing.maxGapMs}
+                onChange={(e) =>
+                  update((d) => (d.pacing.maxGapMs = Number(e.target.value)))
+                }
+              >
+                <option value={2000}>2s</option>
+                <option value={4000}>4s</option>
+                <option value={8000}>8s</option>
+                <option value={15000}>15s</option>
+                <option value={600000}>true to life</option>
+              </select>
+            </label>
+          </>
         )}
       </div>
 
       {showEval && (
         <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-3">
-          <label className="flex items-center gap-1.5 font-mono text-[11px] text-[var(--text-primary)]">
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--text-primary)]">
             <input
               type="checkbox"
               checked={config.eval.enabled}
@@ -211,7 +228,7 @@ export default function MappingControls({ config, onChange, showEval = true }: P
               {(["tension", "dynamics", "blunderAccent"] as const).map((k) => (
                 <label
                   key={k}
-                  className="flex items-center gap-1.5 font-mono text-[11px] text-[var(--text-dim)]"
+                  className="flex items-center gap-1.5 text-[11px] text-[var(--text-dim)]"
                 >
                   <input
                     type="checkbox"

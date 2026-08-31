@@ -178,14 +178,14 @@ export default function Sonify() {
         <button
           onClick={load}
           disabled={loading}
-          className="rounded-md border border-[var(--accent)] px-4 py-2 font-mono text-sm text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--bg)] disabled:opacity-50"
+          className="rounded-md border border-[var(--accent)] px-4 py-2 text-sm text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--bg)] disabled:opacity-50"
         >
           {loading ? "fetching…" : "load game"}
         </button>
       </div>
 
       {error && (
-        <p className="font-mono text-sm text-red-400" role="alert">
+        <p className="text-sm text-red-600" role="alert">
           error: {error}
         </p>
       )}
@@ -193,12 +193,12 @@ export default function Sonify() {
       {game && (
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="w-full max-w-md space-y-3">
-            <div className="flex justify-between font-mono text-xs text-[var(--text-dim)]">
+            <div className="flex justify-between text-xs text-[var(--text-dim)]">
               <span>{black}</span>
               <span>{String(game.headers.Result ?? "")}</span>
             </div>
             <Board fen={currentFen!} lastMove={lastMove} />
-            <div className="flex justify-between font-mono text-xs text-[var(--text-dim)]">
+            <div className="flex justify-between text-xs text-[var(--text-dim)]">
               <span>{white}</span>
               <span>
                 {ply}/{game.moves.length}
@@ -209,7 +209,7 @@ export default function Sonify() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => (playing ? stop() : play())}
-                className="w-20 rounded-md border border-[var(--accent)] px-3 py-1.5 font-mono text-sm text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--bg)]"
+                className="w-20 rounded-md border border-[var(--accent)] px-3 py-1.5 text-sm text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--bg)]"
               >
                 {playing ? "pause" : ply >= game.moves.length ? "replay" : "play"}
               </button>
@@ -226,7 +226,7 @@ export default function Sonify() {
             {config.eval.enabled && (
               <div className="space-y-1">
                 {evalState.status === "running" && (
-                  <p className="font-mono text-[11px] text-[var(--text-dim)]">
+                  <p className="text-[11px] text-[var(--text-dim)]">
                     analyzing… {evalState.done}/{evalState.total}
                   </p>
                 )}
@@ -248,7 +248,7 @@ export default function Sonify() {
       )}
 
       {!game && !error && (
-        <p className="font-mono text-sm text-[var(--text-dim)]">
+        <p className="text-sm text-[var(--text-dim)]">
           paste a chess.com game link — every move becomes a chord. pieces are
           jazz voicings, pawns are scale tones, captures add tension, and the
           board sings the whole game back to you.

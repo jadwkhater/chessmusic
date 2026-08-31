@@ -326,7 +326,7 @@ export default function Play() {
 
   if (!configured) {
     return (
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-6 font-mono text-sm text-[var(--text-dim)]">
+      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-6 text-sm text-[var(--text-dim)]">
         live play isn&apos;t configured on this deployment — set{" "}
         <code className="text-[var(--accent)]">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
         <code className="text-[var(--accent)]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
@@ -338,9 +338,9 @@ export default function Play() {
     return (
       <div className="max-w-md space-y-6">
         <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
-          <h3 className="font-mono text-sm text-[var(--text-primary)]">create a game</h3>
+          <h3 className="text-sm text-[var(--text-primary)]">create a game</h3>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[11px] text-[var(--text-dim)]">time control</span>
+            <span className="text-[11px] text-[var(--text-dim)]">time control</span>
             <select
               value={tc.label}
               onChange={(e) =>
@@ -354,14 +354,14 @@ export default function Play() {
           </div>
           <button
             onClick={() => connect(makeRoomCode(), true, tc)}
-            className="rounded-md border border-[var(--accent)] px-4 py-2 font-mono text-sm text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--bg)]"
+            className="rounded-md border border-[var(--accent)] px-4 py-2 text-sm text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--bg)]"
           >
             create room
           </button>
         </div>
 
         <div className="space-y-3 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-5">
-          <h3 className="font-mono text-sm text-[var(--text-primary)]">join a game</h3>
+          <h3 className="text-sm text-[var(--text-primary)]">join a game</h3>
           <div className="flex gap-2">
             <input
               type="text"
@@ -373,7 +373,7 @@ export default function Play() {
             />
             <button
               onClick={() => joinCode.length === 5 && connect(joinCode, false, tc)}
-              className="rounded-md border border-[var(--border)] px-4 py-1.5 font-mono text-sm text-[var(--text-dim)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="rounded-md border border-[var(--border)] px-4 py-1.5 text-sm text-[var(--text-dim)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
             >
               join
             </button>
@@ -390,14 +390,14 @@ export default function Play() {
         : "";
     return (
       <div className="max-w-md space-y-4 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-6">
-        <p className="font-mono text-sm text-[var(--text-dim)]">
+        <p className="text-sm text-[var(--text-dim)]">
           room <span className="text-[var(--accent)]">{phase.code}</span> ·{" "}
           {phase.tc.label} · waiting for opponent…
         </p>
         {phase.isHost && (
           <button
             onClick={() => navigator.clipboard?.writeText(link)}
-            className="break-all rounded-md border border-[var(--border)] px-3 py-2 text-left font-mono text-xs text-[var(--text-dim)] transition-colors hover:border-[var(--accent)]"
+            className="break-all rounded-md border border-[var(--border)] px-3 py-2 text-left text-xs text-[var(--text-dim)] transition-colors hover:border-[var(--accent)]"
             title="click to copy"
           >
             {link} ⧉
@@ -410,7 +410,7 @@ export default function Play() {
             myColorRef.current = null;
             setPhase({ p: "lobby" });
           }}
-          className="block font-mono text-xs text-[var(--text-dim)] underline hover:text-[var(--accent)]"
+          className="block text-xs text-[var(--text-dim)] underline hover:text-[var(--accent)]"
         >
           cancel
         </button>
@@ -422,7 +422,7 @@ export default function Play() {
   const opponentColor = myColor === "w" ? "b" : "w";
   const clockBox = (side: "w" | "b") => (
     <div
-      className={`rounded-md border px-3 py-1.5 font-mono text-lg tabular-nums ${
+      className={`rounded-md border px-3 py-1.5 text-lg tabular-nums ${
         clock.running === side && phase.p === "playing"
           ? "border-[var(--accent)] text-[var(--accent)]"
           : "border-[var(--border)] text-[var(--text-dim)]"
@@ -435,7 +435,7 @@ export default function Play() {
   return (
     <div className="flex max-w-md flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-[var(--text-dim)]">
+        <span className="text-xs text-[var(--text-dim)]">
           opponent {opponentHere ? "●" : "○ (disconnected)"}
         </span>
         {clockBox(opponentColor ?? "b")}
@@ -450,7 +450,7 @@ export default function Play() {
       />
 
       <div className="flex items-center justify-between">
-        <span className="font-mono text-xs text-[var(--text-dim)]">
+        <span className="text-xs text-[var(--text-dim)]">
           you ({myColor === "w" ? "white" : "black"})
         </span>
         {clockBox(myColor ?? "w")}
@@ -458,7 +458,7 @@ export default function Play() {
 
       {phase.p === "over" ? (
         <div className="space-y-2 rounded-md border border-[var(--accent)] p-3 text-center">
-          <p className="font-mono text-sm text-[var(--accent)]">{phase.reason}</p>
+          <p className="text-sm text-[var(--accent)]">{phase.reason}</p>
           <button
             onClick={() => {
               roomRef.current?.leave();
@@ -467,7 +467,7 @@ export default function Play() {
               setOpponentHere(false);
               setPhase({ p: "lobby" });
             }}
-            className="font-mono text-xs text-[var(--text-dim)] underline hover:text-[var(--accent)]"
+            className="text-xs text-[var(--text-dim)] underline hover:text-[var(--accent)]"
           >
             back to lobby
           </button>
@@ -479,19 +479,19 @@ export default function Play() {
               roomRef.current?.send({ t: "resign", playerId: playerIdRef.current });
               endGame(phase.code, "you resigned");
             }}
-            className="rounded-md border border-[var(--border)] px-3 py-1 font-mono text-xs text-[var(--text-dim)] hover:border-red-400 hover:text-red-400"
+            className="rounded-md border border-[var(--border)] px-3 py-1 text-xs text-[var(--text-dim)] hover:border-red-400 hover:text-red-600"
           >
             resign
           </button>
           {drawOffered === "byThem" ? (
             <>
-              <span className="font-mono text-xs text-[var(--accent)]">draw offered:</span>
+              <span className="text-xs text-[var(--accent)]">draw offered:</span>
               <button
                 onClick={() => {
                   roomRef.current?.send({ t: "drawAccept", playerId: playerIdRef.current });
                   endGame(phase.code, "draw — by agreement");
                 }}
-                className="rounded-md border border-[var(--border)] px-3 py-1 font-mono text-xs text-[var(--text-dim)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                className="rounded-md border border-[var(--border)] px-3 py-1 text-xs text-[var(--text-dim)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
               >
                 accept
               </button>
@@ -500,7 +500,7 @@ export default function Play() {
                   roomRef.current?.send({ t: "drawDecline", playerId: playerIdRef.current });
                   setDrawOffered(null);
                 }}
-                className="rounded-md border border-[var(--border)] px-3 py-1 font-mono text-xs text-[var(--text-dim)] hover:border-red-400 hover:text-red-400"
+                className="rounded-md border border-[var(--border)] px-3 py-1 text-xs text-[var(--text-dim)] hover:border-red-400 hover:text-red-600"
               >
                 decline
               </button>
@@ -512,12 +512,12 @@ export default function Play() {
                 roomRef.current?.send({ t: "drawOffer", playerId: playerIdRef.current });
                 setDrawOffered("byMe");
               }}
-              className="rounded-md border border-[var(--border)] px-3 py-1 font-mono text-xs text-[var(--text-dim)] hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
+              className="rounded-md border border-[var(--border)] px-3 py-1 text-xs text-[var(--text-dim)] hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-50"
             >
               {drawOffered === "byMe" ? "draw offered…" : "offer draw"}
             </button>
           )}
-          <label className="ml-auto flex items-center gap-1.5 font-mono text-xs text-[var(--text-dim)]">
+          <label className="ml-auto flex items-center gap-1.5 text-xs text-[var(--text-dim)]">
             <input
               type="checkbox"
               checked={sonify}
@@ -530,7 +530,7 @@ export default function Play() {
           </label>
         </div>
       )}
-      {status && <p className="font-mono text-xs text-[var(--text-dim)]">{status}</p>}
+      {status && <p className="text-xs text-[var(--text-dim)]">{status}</p>}
     </div>
   );
 }

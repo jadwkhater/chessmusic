@@ -1,40 +1,20 @@
 @import "tailwindcss";
 
-:root,
-:root[data-theme="dark"] {
-  --background: #0b0b12;
-  --foreground: #e8e6df;
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
 
-  --bg: #0b0b12;
-  --bg-surface: #14141f;
-  --titlebar: #1b1b28;
-  --text-primary: #e8e6df;
-  --text-dim: #8b899a;
-  --accent: #ffb454;
-  --accent-dim: #6b6b7d;
-  --border: #24242f;
+  --bg: #ffffff;
+  --bg-surface: #fafafa;
+  --text-primary: #171717;
+  --text-dim: #6b7280;
+  --accent: #2563eb;
+  --accent-dim: #9ca3af;
+  --border: #e5e7eb;
 
-  --board-light: #23232f;
-  --board-dark: #14141f;
-  --board-highlight: rgba(255, 180, 84, 0.35);
-}
-
-:root[data-theme="light"] {
-  --background: #f6f4ef;
-  --foreground: #1b1a17;
-
-  --bg: #f6f4ef;
-  --bg-surface: #fffdf8;
-  --titlebar: #ece8df;
-  --text-primary: #1b1a17;
-  --text-dim: #5c574c;
-  --accent: #b45309;
-  --accent-dim: #a08d6a;
-  --border: #ddd7c9;
-
-  --board-light: #fffdf8;
-  --board-dark: #e4ddcc;
-  --board-highlight: rgba(180, 83, 9, 0.3);
+  --board-light: #f0f0f0;
+  --board-dark: #d4d4d8;
+  --board-highlight: rgba(37, 99, 235, 0.25);
 }
 
 @theme inline {
@@ -47,22 +27,18 @@
 body {
   background: var(--background);
   color: var(--foreground);
-}
-
-::selection {
-  background: var(--accent);
-  color: var(--bg);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
 select,
 input[type="text"] {
-  background: var(--bg-surface);
+  background: #ffffff;
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text-primary);
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   padding: 0.3rem 0.5rem;
+  max-width: 100%;
 }
 
 select:focus,
@@ -73,6 +49,7 @@ input[type="text"]:focus {
 
 input[type="range"] {
   accent-color: var(--accent);
+  min-width: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
