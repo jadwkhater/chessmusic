@@ -297,9 +297,7 @@ export default function Sonify() {
 
       {!game && !error && (
         <p className="text-sm text-[var(--text-dim)]">
-          paste a chess.com game link — every move becomes a chord. pieces are
-          jazz voicings, pawns are scale tones, captures add tension, and the
-          board sings the whole game back to you.
+          paste a game link or id to start
         </p>
       )}
     </div>

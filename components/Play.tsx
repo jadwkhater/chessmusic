@@ -113,11 +113,11 @@ export default function Play() {
     (code: string): boolean => {
       const c = chessRef.current;
       if (c.isCheckmate()) {
-        endGame(code, `checkmate — ${c.turn() === "w" ? "black" : "white"} wins`);
+        endGame(code, `checkmate, ${c.turn() === "w" ? "black" : "white"} wins`);
         return true;
       }
       if (c.isStalemate()) {
-        endGame(code, "draw — stalemate");
+        endGame(code, "stalemate");
         return true;
       }
       if (c.isDraw()) {
@@ -165,14 +165,14 @@ export default function Play() {
         }
         case "resign":
           if (msg.playerId !== me) {
-            endGame(code, "opponent resigned — you win");
+            endGame(code, "opponent resigned, you win");
           }
           break;
         case "drawOffer":
           if (msg.playerId !== me) setDrawOffered("byThem");
           break;
         case "drawAccept":
-          endGame(code, "draw — by agreement");
+          endGame(code, "draw agreed");
           break;
         case "drawDecline":
           setDrawOffered(null);
@@ -181,7 +181,7 @@ export default function Play() {
         case "flag":
           endGame(
             code,
-            `${msg.flagged === "w" ? "white" : "black"} flagged — ${msg.flagged === myColorRef.current ? "you lose" : "you win"} on time`,
+            `${msg.flagged === "w" ? "white" : "black"} flagged, ${msg.flagged === myColorRef.current ? "you lose" : "you win"} on time`,
           );
           break;
         case "syncReq": {
@@ -276,7 +276,7 @@ export default function Play() {
     (side: "w" | "b") => {
       if (phase.p !== "playing") return;
       roomRef.current?.send({ t: "flag", playerId: playerIdRef.current, flagged: side });
-      endGame(phase.code, `${side === "w" ? "white" : "black"} flagged — ${side === myColorRef.current ? "you lose" : "you win"} on time`);
+      endGame(phase.code, `${side === "w" ? "white" : "black"} flagged, ${side === myColorRef.current ? "you lose" : "you win"} on time`);
     },
     [phase, endGame],
   );
@@ -327,7 +327,7 @@ export default function Play() {
   if (!configured) {
     return (
       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-6 text-sm text-[var(--text-dim)]">
-        live play isn&apos;t configured on this deployment — set{" "}
+        live play needs Supabase keys: set{" "}
         <code className="text-[var(--accent)]">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
         <code className="text-[var(--accent)]">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
       </div>
@@ -489,7 +489,7 @@ export default function Play() {
               <button
                 onClick={() => {
                   roomRef.current?.send({ t: "drawAccept", playerId: playerIdRef.current });
-                  endGame(phase.code, "draw — by agreement");
+                  endGame(phase.code, "draw agreed");
                 }}
                 className="rounded-md border border-[var(--border)] px-3 py-1 text-xs text-[var(--text-dim)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
               >

@@ -50,9 +50,8 @@ export default function AppShell() {
             <h1 className="text-xl font-semibold text-[var(--text-primary)]">
               Hear the game
             </h1>
-            <p className="mt-1 mb-6 max-w-2xl text-sm text-[var(--text-dim)]">
-              Turn any chess.com game into music. Tweak the keys, scales, and
-              chord voicings — or let Stockfish&apos;s evaluation bend the sound.
+            <p className="mt-1 mb-6 text-sm text-[var(--text-dim)]">
+              Any chess.com game, played back as music.
             </p>
             <Sonify />
           </section>
@@ -61,9 +60,8 @@ export default function AppShell() {
             <h1 className="text-xl font-semibold text-[var(--text-primary)]">
               Play a friend
             </h1>
-            <p className="mt-1 mb-6 max-w-2xl text-sm text-[var(--text-dim)]">
-              Live chess with real clocks. Create a room, share the link, and
-              optionally hear your game as you play it.
+            <p className="mt-1 mb-6 text-sm text-[var(--text-dim)]">
+              Live chess with clocks. Share a link to start.
             </p>
             <Play />
           </section>
@@ -71,7 +69,15 @@ export default function AppShell() {
       </div>
 
       <footer className="border-t border-[var(--border)] px-4 py-6 text-center text-xs text-[var(--accent-dim)]">
-        built by Jad Khater · {new Date().getFullYear()}
+        built by Jad Khater · chord rules by{" "}
+        <a
+          href="https://www.instagram.com/matthewsinstagram"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-[var(--accent)]"
+        >
+          @matthewsinstagram
+        </a>
       </footer>
     </main>
   );

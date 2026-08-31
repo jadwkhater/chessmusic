@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "chess-music · hear the game",
+  title: "Chess Music",
   description:
-    "Turn any chess.com game into music — configurable keys, scales, and jazz chord mappings — or play live chess with a friend and hear it as you go.",
+    "Chess.com games played back as music, plus live chess with clocks.",
 };
 
 export default function RootLayout({
