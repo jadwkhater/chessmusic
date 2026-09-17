@@ -11,13 +11,27 @@ import { initAudio, moveGapMs, playMove, stopAll } from "@/lib/music/engine";
 import { StockfishEvaluator } from "@/lib/eval/stockfish";
 
 /** Real chess.com bullet games to try when you don't have one handy. */
-const EXAMPLE_GAMES: { id: string; label: string; note: string }[] = [
-  { id: "174103536382", label: "Witty_Alien vs penguingm1", note: "1+0, 39 moves" },
-  { id: "173944087710", label: "Alex-11211 vs Witty_Alien", note: "1+0, 55 moves" },
-  { id: "174405753758", label: "javicio vs Witty_Alien", note: "1+0, mate in 35" },
-  { id: "183548311187", label: "Hikaru vs Oleksandr_Bortnyk", note: "1+0, 75 moves" },
-  { id: "182334502199", label: "Hikaru vs nihalsarin", note: "1+0, 38 moves" },
-  { id: "183548910743", label: "Njal28 vs Hikaru", note: "1+0, 46 moves" },
+interface ExampleGame {
+  id: string;
+  white: string;
+  whiteElo: number;
+  black: string;
+  blackElo: number;
+  /** "w" | "b" */
+  winner: "w" | "b";
+  ending: string;
+  moves: number;
+  date: string;
+  opening: string;
+}
+
+const EXAMPLE_GAMES: ExampleGame[] = [
+  { id: "183548311187", white: "Hikaru", whiteElo: 3423, black: "Oleksandr_Bortnyk", blackElo: 3255, winner: "w", ending: "on time", moves: 75, date: "Sep 12, 2026", opening: "Nimzo-Larsen Attack" },
+  { id: "182334502199", white: "Hikaru", whiteElo: 3417, black: "nihalsarin", blackElo: 3340, winner: "w", ending: "by checkmate", moves: 38, date: "Aug 29, 2026", opening: "French Defense" },
+  { id: "183548910743", white: "Njal28", whiteElo: 3143, black: "Hikaru", blackElo: 3418, winner: "b", ending: "by resignation", moves: 46, date: "Sep 12, 2026", opening: "Modern Defense" },
+  { id: "174103536382", white: "Witty_Alien", whiteElo: 2870, black: "penguingm1", blackElo: 3150, winner: "b", ending: "by resignation", moves: 39, date: "Sep 6, 2026", opening: "Caro-Kann Defense" },
+  { id: "173944087710", white: "Alex-11211", whiteElo: 2914, black: "Witty_Alien", blackElo: 2900, winner: "b", ending: "on time", moves: 55, date: "Sep 3, 2026", opening: "Vienna Game" },
+  { id: "174405753758", white: "javicio", whiteElo: 2880, black: "Witty_Alien", blackElo: 2865, winner: "w", ending: "by checkmate", moves: 35, date: "Sep 13, 2026", opening: "Center Game" },
 ];
 
 type EvalState =
@@ -234,23 +248,75 @@ export default function Sonify() {
       </div>
 
       {!game && !loading && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-dim)]">
-          <span>no game handy? try one:</span>
-          {EXAMPLE_GAMES.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => {
-                setInput(g.id);
-                void load(g.id);
-              }}
-              title={g.note}
-              className="underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--accent)]"
-            >
-              {g.label}
-            </button>
-          ))}
-        </div>
+        <section aria-labelledby="examples-heading" className="space-y-2">
+          <div className="flex items-baseline justify-between">
+            <h2 id="examples-heading" className="text-sm font-medium text-[var(--text-primary)]">
+              No game handy? Try one of these
+            </h2>
+            <span className="text-xs text-[var(--text-dim)]">real 1+0 bullet games</span>
+          </div>
+          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {EXAMPLE_GAMES.map((g) => {
+              const players: { name: string; elo: number; side: "w" | "b" }[] = [
+                { name: g.white, elo: g.whiteElo, side: "w" },
+                { name: g.black, elo: g.blackElo, side: "b" },
+              ];
+              const winnerName = g.winner === "w" ? g.white : g.black;
+              return (
+                <li key={g.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInput(g.id);
+                      void load(g.id);
+                    }}
+                    className="group w-full rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-left transition-colors hover:border-[var(--accent)] hover:bg-white focus:outline-none focus-visible:border-[var(--accent)]"
+                  >
+                    <div className="space-y-1">
+                      {players.map((p) => (
+                        <div key={p.side} className="flex items-center gap-2 text-sm">
+                          <span
+                            aria-hidden
+                            className={`inline-block h-2.5 w-2.5 shrink-0 rounded-sm border border-[var(--border)] ${
+                              p.side === "w" ? "bg-white" : "bg-[var(--text-primary)]"
+                            }`}
+                          />
+                          <span
+                            className={`truncate ${
+                              p.side === g.winner
+                                ? "font-semibold text-[var(--text-primary)]"
+                                : "text-[var(--text-dim)]"
+                            }`}
+                          >
+                            {p.name}
+                          </span>
+                          <span className="ml-auto shrink-0 font-mono text-xs text-[var(--text-dim)]">
+                            {p.elo}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--text-dim)]">
+                      <span className="text-[var(--text-primary)]">
+                        {winnerName} won {g.ending}
+                      </span>
+                      <span aria-hidden>·</span>
+                      <span>{g.moves} moves</span>
+                      <span aria-hidden>·</span>
+                      <span>{g.opening}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-xs text-[var(--accent-dim)]">
+                      <span>{g.date}</span>
+                      <span className="text-[var(--accent)] opacity-0 transition-opacity group-hover:opacity-100">
+                        load &rarr;
+                      </span>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       {error && (
