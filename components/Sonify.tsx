@@ -10,6 +10,16 @@ import { EB_G_JAZZ, type MusicConfig } from "@/lib/music/config";
 import { initAudio, moveGapMs, playMove, stopAll } from "@/lib/music/engine";
 import { StockfishEvaluator } from "@/lib/eval/stockfish";
 
+/** Real chess.com bullet games to try when you don't have one handy. */
+const EXAMPLE_GAMES: { id: string; label: string; note: string }[] = [
+  { id: "174103536382", label: "Witty_Alien vs penguingm1", note: "1+0, 39 moves" },
+  { id: "173944087710", label: "Alex-11211 vs Witty_Alien", note: "1+0, 55 moves" },
+  { id: "174405753758", label: "javicio vs Witty_Alien", note: "1+0, mate in 35" },
+  { id: "183548311187", label: "Hikaru vs Oleksandr_Bortnyk", note: "1+0, 75 moves" },
+  { id: "182334502199", label: "Hikaru vs nihalsarin", note: "1+0, 38 moves" },
+  { id: "183548910743", label: "Njal28 vs Hikaru", note: "1+0, 46 moves" },
+];
+
 type EvalState =
   | { status: "idle" }
   | { status: "running"; done: number; total: number }
@@ -50,8 +60,8 @@ export default function Sonify() {
     };
   }, []);
 
-  const load = async () => {
-    const ref = parseGameRef(input);
+  const load = async (source: string = input) => {
+    const ref = parseGameRef(source);
     if (!ref) {
       setError("that doesn't look like a chess.com game id or url");
       return;
@@ -210,18 +220,38 @@ export default function Sonify() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && load()}
+          onKeyDown={(e) => e.key === "Enter" && void load()}
           placeholder="chess.com game url or id, e.g. 172385979790"
           className="flex-1 !py-2 !text-sm"
         />
         <button
-          onClick={load}
+          onClick={() => void load()}
           disabled={loading}
           className="rounded-md border border-[var(--accent)] px-4 py-2 text-sm text-[var(--accent)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--bg)] disabled:opacity-50"
         >
           {loading ? "fetching…" : "load game"}
         </button>
       </div>
+
+      {!game && !loading && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--text-dim)]">
+          <span>no game handy? try one:</span>
+          {EXAMPLE_GAMES.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => {
+                setInput(g.id);
+                void load(g.id);
+              }}
+              title={g.note}
+              className="underline decoration-dotted underline-offset-2 transition-colors hover:text-[var(--accent)]"
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {error && (
         <p className="text-sm text-red-600" role="alert">
