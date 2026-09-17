@@ -255,7 +255,7 @@ export default function Sonify() {
             </h2>
             <span className="text-xs text-[var(--text-dim)]">real 1+0 bullet games</span>
           </div>
-          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {EXAMPLE_GAMES.map((g) => {
               const players: { name: string; elo: number; side: "w" | "b" }[] = [
                 { name: g.white, elo: g.whiteElo, side: "w" },
@@ -263,14 +263,14 @@ export default function Sonify() {
               ];
               const winnerName = g.winner === "w" ? g.white : g.black;
               return (
-                <li key={g.id}>
+                <li key={g.id} className="min-w-0">
                   <button
                     type="button"
                     onClick={() => {
                       setInput(g.id);
                       void load(g.id);
                     }}
-                    className="group w-full rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-left transition-colors hover:border-[var(--accent)] hover:bg-white focus:outline-none focus-visible:border-[var(--accent)]"
+                    className="group w-full min-w-0 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] p-3 text-left transition-colors hover:border-[var(--accent)] hover:bg-white focus:outline-none focus-visible:border-[var(--accent)]"
                   >
                     <div className="space-y-1">
                       {players.map((p) => (
@@ -282,7 +282,7 @@ export default function Sonify() {
                             }`}
                           />
                           <span
-                            className={`truncate ${
+                            className={`min-w-0 truncate ${
                               p.side === g.winner
                                 ? "font-semibold text-[var(--text-primary)]"
                                 : "text-[var(--text-dim)]"
